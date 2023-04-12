@@ -33,7 +33,8 @@ mongooose.connect("mongodb://localhost:27017/userDB");
 const userSchema = new mongooose.Schema({
     email: String,
     password: String,
-    googleId: String
+    googleId: String,
+    secret: String
 });
 
 
@@ -125,11 +126,39 @@ app.get("/register", function (req, res) {
 
 // GET Secrets route
 app.get("/secrets", function (req, res) {
+    User.find({ "secret": { $ne: null } }).then(function(users){
+        if(users){
+            res.render("secrets", {usersWithSecrets: users});
+        }
+    }).catch(function (err) { 
+        console.log(err); 
+    });
+});
+
+
+// GET submit route
+app.get("/submit", function (req, res) {
     if (req.isAuthenticated()) {
-        res.render("secrets");
+        res.render("submit");
     } else {
         res.redirect("/login");
     }
+});
+
+// POST submit route
+app.post("/submit", function (req, res) {
+    const submittedSecret = req.body.secret;
+
+    User.findById(req.user.id).then(function (user) {
+        if (user) {
+            user.secret = submittedSecret;
+            user.save().then(function () {
+                res.redirect("/secrets");
+            });
+        }
+    }).catch(function (err) {
+        console.log(err);
+    });
 });
 
 // POST Register route
